@@ -17,23 +17,33 @@ It constructs of the following components:
     It's written in Assembly and all it does is switching from 16 bits to 32 bits and then load the kernel from the floppy disk to the memory.
 - **Kernel**
     It's the core of the operating system and has all the rock and roll stuff. And it consist of:
--- Kernel entry: Loads the '''kmain''' function.
--- Kernel: The OS itself
--- Drivers: All the basic drivers for the OS
--- CPU: All files needed to deal with the CPU stuff (IDT, ISR)
--- libc: My librarys (stdio, stdlib, etc...)
+    - Kernel entry: Loads the `kmain` function.
+    - Kernel: The OS itself
+    - Drivers: All the basic drivers for the OS
+    - CPU: All files needed to deal with the CPU stuff (IDT, ISR)
+    - libc: My librarys (stdio, stdlib, etc...)
 
 ## Roadmap
 The work on this project isn't done and here is the roadmao and milestones:
+
 [ ✓ ] Switch to Protected Mode and load kernel from disk
+
 [ ✓ ] Add IDT and ISR
+
 [ ✓ ] Add timer driver and sleep functionality
+
 [ ✓ ] Add display driver
+
 [ ✓ ] Add stdlib and stdio
+
 [ X ] Add keyboard driver and input functionality
+
 [ X ] Add floppy disk driver
+
 [ X ] Add files.h library
+
 [ X ] Add syscalls
+
 [ X ] Load shell from disk and execute it
 
 ## Usage
@@ -41,14 +51,15 @@ The work on this project isn't done and here is the roadmao and milestones:
 You can build an image from the source code in **Linux**:
 1. Make sure you have [GCC](gcc.gnu.org) and [NASM](https://www.nasm.us/) installed
 2. run this command to build an image
-    '''
+    ```
     sudo make build
-    '''
+    ```
     it will have the image in **_outputs_** directory
 3. run with [qemu](www.qemu.org) using the following command:
-    '''
+    ```
     sudo make run
-    '''
+    ```
+    
 _P.S. It needs sudo permission because it uses _mount_ command_
 
 #### Run directly:
