@@ -5,7 +5,7 @@
  * 
  * No return.
  */
-void memory_copy(void *source, void *dest, int count) {
+void memory_copy(char *source, char *dest, int count) {
     int i;
     for (i = 0; i < count; i++) {
         *(dest + i) = *(source + i);
@@ -19,7 +19,7 @@ void memory_copy(void *source, void *dest, int count) {
  * 
  * No return.
 */
-void memory_set(void *dest, char value, int count) {
+void memory_set(char *dest, char value, int count) {
     char *temp = (char *)dest;
     for ( ; count != 0; count--) *temp++ = value;
 }

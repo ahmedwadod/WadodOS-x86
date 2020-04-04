@@ -63,4 +63,4 @@ You can build an image from the source code in **Linux**:
 _P.S. It needs sudo permission because it uses _mount_ command_
 
 #### Run directly:
-Grab the **_wadodos.flp_** from the **_outputs_** folder and run it as a floppy disk from any Virtual Machine.
+Grab the **_wadodos.flp_** from the **_disk-images_** folder and run it as a floppy disk from any Virtual Machine.
