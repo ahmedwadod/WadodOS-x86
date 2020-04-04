@@ -104,7 +104,7 @@ FILE fopen(char filename[12], bool create)
 
 bool isEOF(ushort_16 clusval)
 {
-    return (clusval == 0x00) || (clusval >= 0xFF0 || clusval <= 0xFFF);
+    return (clusval >= 0xFF0 || clusval <= 0xFFF);
 }
 void fread(FILE f, char* buffer)
 {
@@ -119,6 +119,35 @@ void fread(FILE f, char* buffer)
         byteCounter += 512;
         clusterValue = _getClusterValue(clusterValue);
     } while(!isEOF(clusterValue));
+}
+
+void fwrite(FILE f, char* data, int length)
+{
+    ushort_16 currentCluster = f.directoryEntry->firstLogicalCluster;
+    ushort_16 clusterValue = 0;
+    int writeLength = length;
+    if(writeLength > 512)
+        writeLength = 512;
+    char c, h, s;
+    for (ushort_16 i = 0; i < length; i+=512)
+    {
+        int ptr = i + (int)data;
+        lba_2_chs(31+currentCluster, &c, &h, &s);
+        floppy_write(ptr, DEFAULT_FLOPPY, c, h, s, writeLength);
+        clusterValue = _getClusterValue(currentCluster);
+        if(isEOF(clusterValue))
+        {
+            FAT_TABLE1[currentCluster].s = _getNextEmptyCluster();
+        }
+        else
+        {
+            currentCluster = clusterValue;
+        }
+        
+    }
+    
+    _writeFatTables();
+    _writeRootDirectory();
 }
 
 FILE* getAllFiles()

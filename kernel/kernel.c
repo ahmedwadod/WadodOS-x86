@@ -18,11 +18,9 @@ void kmain()
     init_fat12(FLOPPY_DRIVE1);
     clear_screen();
 
-    FILE myf = fopen("TEST.TXT", false);
-    if(myf.name[0] == 0)
-        print(":<");
-    FILE j = fopen("JOSH.TXT", true);
-    print("File JOSH.TXT was created!");
+    FILE myf = fopen("JEFF.TXT", true);
+    fwrite(myf, "MY Name IS JEFFFFF!!!", 22);
+    print("Done");
     
     return 0;
 }

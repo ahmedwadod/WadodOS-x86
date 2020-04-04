@@ -72,35 +72,6 @@ void appendchar(char* str, char letter)
     str -= (len + 1);
 }
 
-/**
- * Compare two strings.
- * 
- * Returns 1 if equal or 0 if not equal.
-*/
-char strcmp(char *a, char *b)
-{
-    char *tempA = a;
-    char *tempB = b;
-    char ret = 0;
-    while(*tempA != '\0' && *tempB != '\0')
-    {
-        if (*tempA == *tempB)
-        {
-            ret = 1;
-            tempA++;
-            tempB++;
-        }
-        else
-        {
-            ret = 0;
-            return ret;
-        }
-        
-    }
-
-    return ret;
-}
-
 char strcmp_len(char *a, char *b, int count)
 {
     char *tempA = a;

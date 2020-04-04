@@ -44,6 +44,7 @@ typedef union
 void init_fat12(char drive);
 FILE fopen(char filename[12], bool create);
 void fread(FILE f, char* buffer);
+void fwrite(FILE f, char* data, int length);
 FILE* getAllFiles();
 
 #endif
