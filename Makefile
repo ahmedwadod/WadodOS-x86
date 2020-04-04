@@ -35,8 +35,9 @@ build: clean all
 	mkdir tmp-flp
 	mount -o loop -t vfat outputs/wadodos.flp tmp-flp
 	cp bin/kernel.bin tmp-flp/
+	sleep 0.4
 	cp -R files-to-disk/. tmp-flp/
-	sleep 0.6
+	sleep 0.4
 	umount tmp-flp/
 	# Build Successfully
 

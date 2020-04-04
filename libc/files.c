@@ -3,6 +3,8 @@
 void _convertFatNameToFileName(char fatName[8], char ext[3], char *filename);
 void _convertFileNameToFatName(char filename[12], char *fatName, char *ext);
 ushort_16 _getClusterValue(ushort_16 cluster);
+void _writeRootDirectory();
+void _writeFatTables();
 
 static char DEFAULT_FLOPPY;
 static FAT_DirectoryEntry root_directory[224];
@@ -20,7 +22,7 @@ void init_fat12(char drive)
 
     /* Read tables */
     int tbPtr = 0xd000;
-    memory_set((char*)tbPtr, '\0', 4608);
+    kmalloc((char*)tbPtr, 4608);
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
     floppy_read(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608);
@@ -36,10 +38,9 @@ void init_fat12(char drive)
 
     /* Read root directory */
     int rdPtr = 0xb000;
-    memory_set((char*) rdPtr, '\0', 7680);
+    kmalloc((char*) rdPtr, 7680);
     lba_2_chs(19, &c, &h, &s);
     floppy_read(rdPtr, DEFAULT_FLOPPY, c, h, s, 7680);
-    
     union
     {
         char raw[7680];
@@ -93,6 +94,7 @@ FILE fopen(char filename[12], bool create)
                 }
             }
             
+            FAT_TABLE1[emptyCluster].s = 0xFF0;
 
             memory_copy(fatName, f.name, 8);
             memory_copy(ext, f.extension, 3);
@@ -103,12 +105,14 @@ FILE fopen(char filename[12], bool create)
             memory_copy(fatName, root_directory[emptySlotInRD].name, 8);
             memory_copy(ext, root_directory[emptySlotInRD].extension, 3);
             f.directoryEntry = &root_directory[emptySlotInRD];
+
+            _writeFatTables();
+            _writeRootDirectory();
             break;
         }
         else
         {
             f.name[0] = '\0';
-            break;
         }
     }
     
@@ -245,4 +249,44 @@ ushort_16 _getClusterValue(ushort_16 cluster)
         ushort_16 second = (FAT_TABLE1[cluster].s << 3) & 0xFFF0;
         return second | firstHalfByte;
     }
+}
+
+void _writeFatTables()
+{
+    int tbPtr = 0xd000;
+    kmalloc((char*)tbPtr, 4608);
+    char *tbStr = (char*)tbPtr;
+    for (int i = 0; i < 4608; i += 2)
+    {
+        tbStr[i] = FAT_TABLE1[i/2].b[0];
+        tbStr[i+1] = FAT_TABLE1[i/2].b[1];
+    }
+    char c,h,s;
+    lba_2_chs(1, &c, &h, &s);
+    floppy_write(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
+    lba_2_chs(10, &c, &h, &s);
+    floppy_write(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 2
+}
+
+void _writeRootDirectory()
+{
+    int rdPtr = 0xb000;
+    kmalloc((char*) rdPtr, 7680);
+    
+    union
+    {
+        char raw[7680];
+        FAT_DirectoryEntry dic[224];
+    } ent;
+    
+    // Only 34 files maximum
+    for(int i = 0; i < 34; i++)
+    {
+        ent.dic[i] = root_directory[i];
+    }
+
+    memory_copy(ent.raw, (char*)rdPtr, 7680);
+    char c, h, s;
+    lba_2_chs(19, &c, &h, &s);
+    floppy_write(rdPtr, DEFAULT_FLOPPY, c, h, s, 7680);
 }
