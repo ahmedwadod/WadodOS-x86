@@ -19,10 +19,10 @@ void kmain()
     clear_screen();
 
     FILE myf = fopen("TEST.TXT", false);
-    char *content;
-    kmalloc(content, 100);
-    fread(myf, content);
-    print(content);
+    if(myf.name[0] == 0)
+        print(":<");
+    FILE j = fopen("JOSH.TXT", true);
+    print("File JOSH.TXT was created!");
     
     return 0;
 }

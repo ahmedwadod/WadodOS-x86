@@ -3,16 +3,14 @@
 void _convertFatNameToFileName(char fatName[8], char ext[3], char *filename);
 void _convertFileNameToFatName(char filename[12], char *fatName, char *ext);
 ushort_16 _getClusterValue(ushort_16 cluster);
+ushort_16 _getNextEmptyCluster();
 void _writeRootDirectory();
 void _writeFatTables();
 
 static char DEFAULT_FLOPPY;
 static FAT_DirectoryEntry root_directory[224];
-union
-{
-    uchar_8 b[2];
-    ushort_16 s;
-} FAT_TABLE1[2304], FAT_TABLE2[2304];
+static FAT_Table *FAT_TABLE1 = (FAT_Table*) FAT_TABLE1_MEMADDRESS;
+static FAT_Table *FAT_TABLE2 = (FAT_Table*) FAT_TABLE2_MEMADDRESS;
 
 void init_fat12(char drive)
 {
@@ -21,20 +19,12 @@ void init_fat12(char drive)
     reset_floppy_controller(drive);
 
     /* Read tables */
-    int tbPtr = 0xd000;
-    kmalloc((char*)tbPtr, 4608);
+    kmalloc(FAT_TABLE1_MEMADDRESS, 4608);
+    kmalloc(FAT_TABLE2_MEMADDRESS, 4608);
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
-    floppy_read(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608);
-    char *tbStr = (char*)tbPtr;
-    for (int i = 0; i < 4608; i += 2)
-    {
-        FAT_TABLE1[i/2].b[0] = tbStr[i];
-        FAT_TABLE1[i/2].b[1] = tbStr[i+1];
-        // Redundant copy shit
-        FAT_TABLE2[i/2].b[0] = tbStr[i];
-        FAT_TABLE2[i/2].b[1] = tbStr[i+1];
-    }
+    floppy_read(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608);
+    memory_copy(FAT_TABLE1_MEMADDRESS, FAT_TABLE2_MEMADDRESS, 4608);
 
     /* Read root directory */
     int rdPtr = 0xb000;
@@ -78,7 +68,6 @@ FILE fopen(char filename[12], bool create)
         else if(create)
         {
             int emptySlotInRD = 0;
-            int emptyCluster = 1;
             for(emptySlotInRD; emptySlotInRD < 34; emptySlotInRD++)
             {
                 if(root_directory[emptySlotInRD].name[0] == '\0')
@@ -86,13 +75,7 @@ FILE fopen(char filename[12], bool create)
                     break;
                 }
             }
-            for (emptyCluster; emptyCluster < 2304; emptyCluster++)
-            {
-                if(_getClusterValue(emptyCluster) == 0)
-                {
-                    break;
-                }
-            }
+            ushort_16 emptyCluster = _getNextEmptyCluster();
             
             FAT_TABLE1[emptyCluster].s = 0xFF0;
 
@@ -119,7 +102,7 @@ FILE fopen(char filename[12], bool create)
     return f;
 }
 
-char isEOF(ushort_16 clusval)
+bool isEOF(ushort_16 clusval)
 {
     return (clusval == 0x00) || (clusval >= 0xFF0 || clusval <= 0xFFF);
 }
@@ -251,21 +234,26 @@ ushort_16 _getClusterValue(ushort_16 cluster)
     }
 }
 
+ushort_16 _getNextEmptyCluster()
+{
+    for (ushort_16 i = 2; i < 2304; i++)
+    {
+        if(_getClusterValue(i) == 0x00)
+        {
+            return i;
+        }
+    }
+    
+    return 0;    
+}
+
 void _writeFatTables()
 {
-    int tbPtr = 0xd000;
-    kmalloc((char*)tbPtr, 4608);
-    char *tbStr = (char*)tbPtr;
-    for (int i = 0; i < 4608; i += 2)
-    {
-        tbStr[i] = FAT_TABLE1[i/2].b[0];
-        tbStr[i+1] = FAT_TABLE1[i/2].b[1];
-    }
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
-    floppy_write(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
+    floppy_write(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
     lba_2_chs(10, &c, &h, &s);
-    floppy_write(tbPtr, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 2
+    floppy_write(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 2
 }
 
 void _writeRootDirectory()
