@@ -18,8 +18,9 @@ void kmain()
     init_fat12(FLOPPY_DRIVE1);
     clear_screen();
 
-    FILE myf = fopen("JEFF.TXT", true);
-    fwrite(myf, "MY Name IS JEFFFFF!!!", 22);
+    print("Writing to disk... ");
+    FILE myFile = fopen("JEFF.TXT", true);
+    fwrite(myFile, "MY Name IS JEFFFFF!!!", 22);
     print("Done");
     
     return 0;

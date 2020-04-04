@@ -40,7 +40,7 @@ The work on this project isn't done and here is the roadmao and milestones:
 
 [ ✓ ] Add floppy disk driver
 
-[ X ] Add files.h library
+[ ✓ ] Add files.h library
 
 [ X ] Add syscalls
 
