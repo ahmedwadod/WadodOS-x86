@@ -115,3 +115,14 @@ char strcmp_len(char *a, char *b, int count)
     
     return 1;
 }
+
+/**
+ * Appends string (addition) to (origin).
+ * 
+ * No return
+*/
+void combine(char* origin, char* addition)
+{
+    int endOfOrigin = (int)origin + strlen(origin);
+    memory_copy(addition, (char*)endOfOrigin, strlen(addition));
+}
