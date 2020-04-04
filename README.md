@@ -38,7 +38,7 @@ The work on this project isn't done and here is the roadmao and milestones:
 
 [ ✓ ] Add keyboard driver and input functionality
 
-[ X ] Add floppy disk driver
+[ ✓ ] Add floppy disk driver
 
 [ X ] Add files.h library
 
