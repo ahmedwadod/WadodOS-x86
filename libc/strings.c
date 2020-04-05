@@ -72,7 +72,7 @@ void appendchar(char* str, char letter)
     str -= (len + 1);
 }
 
-char strcmp_len(char *a, char *b, int count)
+bool strcmp_len(char *a, char *b, int count)
 {
     char *tempA = a;
     char *tempB = b;
@@ -80,11 +80,11 @@ char strcmp_len(char *a, char *b, int count)
     {
         if (*tempA++ != *tempB++)
         {
-            return 0;
+            return false;
         }
     }
     
-    return 1;
+    return true;
 }
 
 /**

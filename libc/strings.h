@@ -10,6 +10,6 @@ int strlen(char s[]);
 void droplastchar(char* str);
 void appendchar(char* str, char letter);
 void combine(char* origin, char* addition);
-char strcmp_len(char *a, char *b, int count);
+bool strcmp_len(char *a, char *b, int count);
 
 #endif
