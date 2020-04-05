@@ -17,7 +17,7 @@ all: bin/bootloader.bin bin/kernel.bin
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 bin/kernel.bin: bin/kernel/kernel_entry.o ${OBJ} cpu/interrupt.o
-	ld -o $@ -m elf_i386 -Ttext 0x1000 bin/kernel/kernel_entry.o ${OBJBIN} bin/cpu/interrupt.o --oformat binary
+	ld -o $@ -m elf_i386 -Ttext 0x1000 bin/kernel/kernel_entry.o bin/cpu/interrupt.o ${OBJBIN} --oformat binary
 
 bin/kernel/kernel_entry.o:
 	nasm -f elf32 kernel/kernel_entry.asm -o $@
@@ -26,7 +26,7 @@ cpu/interrupt.o:
 	nasm -f elf32 cpu/interrupt.asm -o bin/cpu/interrupt.o
 
 bin/bootloader.bin:
-	nasm -f bin bootloader/main.asm -o $@
+	nasm -f bin bootloader/bootloader.asm -o $@
 
 build: clean all
 	mkfs.msdos -C outputs/wadodos.flp 1440
