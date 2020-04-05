@@ -53,7 +53,7 @@ bootloader_start:
 	mov ah, 8			; Get drive parameters
 	int 13h
 	jc fatal_disk_error
-	and cx, 3Fh			; Maximum sector number
+	and cx, 2879			; Maximum sector number
 	mov [SectorsPerTrack], cx	; Sector numbers start at 1
 	movzx dx, dh			; Maximum head number
 	add dx, 1			; Head numbers start at 0 - add 1 for total
