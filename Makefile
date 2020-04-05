@@ -17,7 +17,7 @@ all: bin/bootloader.bin bin/kernel.bin
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 bin/kernel.bin: bin/kernel/kernel_entry.o ${OBJ} cpu/interrupt.o
-	ld -o $@ -m elf_i386 -Ttext 0x1000 bin/kernel/kernel_entry.o bin/cpu/interrupt.o ${OBJBIN} --oformat binary
+	ld -o $@ -T link.ld -m elf_i386 bin/kernel/kernel_entry.o bin/cpu/interrupt.o ${OBJBIN}
 
 bin/kernel/kernel_entry.o:
 	nasm -f elf32 kernel/kernel_entry.asm -o $@
