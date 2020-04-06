@@ -9,8 +9,8 @@ void _writeFatTables();
 
 static char DEFAULT_FLOPPY;
 static FAT_DirectoryEntry root_directory[224];
-static FAT_Table *FAT_TABLE1 = (FAT_Table*) FAT_TABLE1_MEMADDRESS;
-static FAT_Table *FAT_TABLE2 = (FAT_Table*) FAT_TABLE2_MEMADDRESS;
+uchar_8 *FAT_TABLE1 = (uchar_8*) FAT_TABLE1_MEMADDRESS;
+uchar_8 *FAT_TABLE2 = (uchar_8*) FAT_TABLE2_MEMADDRESS;
 
 void init_fat12(char drive)
 {
@@ -19,12 +19,12 @@ void init_fat12(char drive)
     reset_floppy_controller(drive);
 
     /* Read tables */
-    kmalloc(FAT_TABLE1_MEMADDRESS, 4608);
-    kmalloc(FAT_TABLE2_MEMADDRESS, 4608);
+    kmalloc((char*)FAT_TABLE1_MEMADDRESS, 4608);
+    kmalloc((char*)FAT_TABLE2_MEMADDRESS, 4608);
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
     floppy_read(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608);
-    memory_copy(FAT_TABLE1_MEMADDRESS, FAT_TABLE2_MEMADDRESS, 4608);
+    memory_copy((char*)FAT_TABLE1_MEMADDRESS, FAT_TABLE2, 4608);
 
     /* Read root directory */
     int rdPtr = 0xb000;
@@ -77,7 +77,8 @@ FILE fopen(char filename[12], bool create)
             }
             ushort_16 emptyCluster = _getNextEmptyCluster();
             
-            FAT_TABLE1[emptyCluster].s = 0xFF0;
+            // TODO: uset _setClusterValue
+            FAT_TABLE1[emptyCluster] = 0xFF0;
 
             memory_copy(fatName, f.name, 8);
             memory_copy(ext, f.extension, 3);
@@ -104,19 +105,20 @@ FILE fopen(char filename[12], bool create)
 
 bool isEOF(ushort_16 clusval)
 {
-    return (clusval >= 0xFF0 || clusval <= 0xFFF);
+    return (clusval >= 0xFF0 && clusval <= 0xFFF);
 }
 void fread(FILE f, char* buffer)
 {
-    ushort_16 clusterValue = f.directoryEntry->firstLogicalCluster;
-    int byteCounter = 0;
+    static ushort_16 clusterValue = 0;
+    static uint_32 ptr = 0;
+    clusterValue = f.directoryEntry->firstLogicalCluster;
+    ptr = (uint_32)buffer; 
     char c, h, s;
     do
     {
-        int ptr = byteCounter + (int)buffer;
         lba_2_chs(31+clusterValue, &c, &h, &s);
         floppy_read(ptr, DEFAULT_FLOPPY, c, h, s, 512);
-        byteCounter += 512;
+        ptr += 512;
         clusterValue = _getClusterValue(clusterValue);
     } while(!isEOF(clusterValue));
 }
@@ -137,7 +139,8 @@ void fwrite(FILE f, char* data, int length)
         clusterValue = _getClusterValue(currentCluster);
         if(isEOF(clusterValue))
         {
-            FAT_TABLE1[currentCluster].s = _getNextEmptyCluster();
+            // TODO: Use _setClusterValue 
+            FAT_TABLE1[currentCluster] = _getNextEmptyCluster();
         }
         else
         {
@@ -246,21 +249,26 @@ void _convertFileNameToFatName(char filename[12], char *fatName, char *ext)
     }
 }
 
-// Clusters starting from 1
+// Clusters starting from 0
 ushort_16 _getClusterValue(ushort_16 cluster)
 {
-    cluster--;
     uchar_8 isOdd = cluster % 2;
+    ushort_16 count = cluster + (cluster/2);
+    ushort_16 val = 0;
+    val = FAT_TABLE1[count+1];
+    val = val << 8;
+    val |= FAT_TABLE1[count];
     if(!isOdd) // Is even
     {
-        return ((FAT_TABLE1[cluster].s >> 1) & 0x0FFF);
+        
+        val &= 0x0FFF;
     }
     else
     {
-        ushort_16 firstHalfByte = FAT_TABLE1[cluster-1].s & 0x000F;
-        ushort_16 second = (FAT_TABLE1[cluster].s << 3) & 0xFFF0;
-        return second | firstHalfByte;
+        val = val >> 4;
     }
+
+    return val;
 }
 
 ushort_16 _getNextEmptyCluster()
@@ -273,7 +281,7 @@ ushort_16 _getNextEmptyCluster()
         }
     }
     
-    return 0;    
+    return 0; 
 }
 
 void _writeFatTables()

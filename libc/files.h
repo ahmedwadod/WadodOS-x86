@@ -31,12 +31,6 @@ typedef struct
     FAT_DirectoryEntry *directoryEntry;
 } FILE;
 
-typedef union
-{
-    uchar_8 b[2];
-    ushort_16 s;
-} FAT_Table;
-
 #define FAT_TABLE1_MEMADDRESS 0xf1000
 #define FAT_TABLE2_MEMADDRESS 0xf2300
 
