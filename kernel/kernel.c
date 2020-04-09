@@ -19,22 +19,22 @@ void kmain()
     clear_screen();
 
     print("Reading from TEST.TXT...\n");
-    char *x;
-    FILE f = fopen("TEST.TXT", false);
-    fread(f, x);
-    print(x);
+    char *testContent;
+    FILE f1 = fopen("TEST.TXT", false);
+    fread(f1, testContent);
+    print(testContent);
     print("\nDone Reading!\n");
 
-    print("\nWriting to JEFF.TXT...");
-    char *jeff = "Hello, ma name is jeff!";
-    FILE jef = fopen("JEFF.TXT", true);
-    fwrite(jef, jeff, strlen(jeff));
+    print("\nWriting to TEST2.TXT...");
+    char *txt = "Hello,\nThis is the TEST2.TXT file!";
+    FILE f2 = fopen("TEST2.TXT", true);
+    fwrite(f2, txt, strlen(txt));
     print("\nDone Writing.\n");
 
-    print("Reading JEFF.TXT...\n");
-    char *tmp;
-    fread(jef, tmp);
-    print(tmp);
+    print("\nReading TEST2.TXT...\n");
+    char *test2Content;
+    fread(f2, test2Content);
+    print(test2Content);
     print("\nDone!");
     return;
 }
