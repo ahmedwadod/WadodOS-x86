@@ -14,14 +14,14 @@ Throughout the making of this project I made use of some resources I'll be linki
 This is an x86 Operating System written in assembly and C. It works on a floppy disk in FAT 12 format.
 It constructs of the following components:
 - **Bootloader**
-    It's written in Assembly and all it does is switching from 16 bits to 32 bits and then load the kernel from the floppy disk to the memory.
+    It's written in Assembly. It loads the main `KERNEL.BIN` file from floppy disk to memory.
 - **Kernel**
     It's the core of the operating system and has all the rock and roll stuff. And it consist of:
-    - Kernel entry: Loads the `kmain` function.
+    - Kernel entry: Switchs to 32 bit Protected Mode and loads the `kmain` function.
     - Kernel: The OS itself
     - Drivers: All the basic drivers for the OS
     - CPU: All files needed to deal with the CPU stuff (IDT, ISR)
-    - libc: My librarys (stdio, stdlib, etc...)
+    - libc: My C librarys (stdio, stdlib, etc...)
 
 ## Roadmap
 The work on this project isn't done and here is the roadmao and milestones:
