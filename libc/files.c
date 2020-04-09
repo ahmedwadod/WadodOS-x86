@@ -4,13 +4,14 @@ void _convertFatNameToFileName(char fatName[8], char ext[3], char *filename);
 void _convertFileNameToFatName(char filename[12], char *fatName, char *ext);
 ushort_16 _getClusterValue(ushort_16 cluster);
 ushort_16 _getNextEmptyCluster();
+void _setClusterValue(ushort_16 cluster, ushort_16 value);
 void _writeRootDirectory();
 void _writeFatTables();
 
 static char DEFAULT_FLOPPY;
 static FAT_DirectoryEntry root_directory[224];
-uchar_8 *FAT_TABLE1 = (uchar_8*) FAT_TABLE1_MEMADDRESS;
-uchar_8 *FAT_TABLE2 = (uchar_8*) FAT_TABLE2_MEMADDRESS;
+static uchar_8 FAT_TABLE1[4608];
+static uchar_8 FAT_TABLE2[4608];
 
 void init_fat12(char drive)
 {
@@ -19,24 +20,23 @@ void init_fat12(char drive)
     reset_floppy_controller(drive);
 
     /* Read tables */
-    kmalloc((char*)FAT_TABLE1_MEMADDRESS, 4608);
-    kmalloc((char*)FAT_TABLE2_MEMADDRESS, 4608);
+    kmalloc((char*)FATT_MEM_BUFFER, 4608);
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
-    floppy_read(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608);
-    memory_copy((char*)FAT_TABLE1_MEMADDRESS, FAT_TABLE2, 4608);
+    floppy_read(FATT_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 4608);
+    memory_copy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE1, 4608);
+    memory_copy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE2, 4608);
 
     /* Read root directory */
-    int rdPtr = 0xb000;
-    kmalloc((char*) rdPtr, 7680);
+    kmalloc((char*) RD_MEM_BUFFER, 7168);
     lba_2_chs(19, &c, &h, &s);
-    floppy_read(rdPtr, DEFAULT_FLOPPY, c, h, s, 7680);
+    floppy_read(RD_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 7168);
     union
     {
-        char raw[7680];
+        char raw[7168];
         FAT_DirectoryEntry dic[224];
     } ent;
-    memory_copy((char*)rdPtr, ent.raw, 7680);
+    memory_copy((char*)RD_MEM_BUFFER, ent.raw, 7168);
 
     // Only 34 files maximum
     for(int i = 0; i < 34; i++)
@@ -77,8 +77,7 @@ FILE fopen(char filename[12], bool create)
             }
             ushort_16 emptyCluster = _getNextEmptyCluster();
             
-            // TODO: uset _setClusterValue
-            FAT_TABLE1[emptyCluster] = 0xFF0;
+            _setClusterValue(emptyCluster, 0xFF8);
 
             memory_copy(fatName, f.name, 8);
             memory_copy(ext, f.extension, 3);
@@ -105,12 +104,12 @@ FILE fopen(char filename[12], bool create)
 
 bool isEOF(ushort_16 clusval)
 {
-    return (clusval >= 0xFF0 && clusval <= 0xFFF);
+    return clusval == 0 || (clusval >= 0xFF8 && clusval <= 0xFFF);
 }
 void fread(FILE f, char* buffer)
 {
-    static ushort_16 clusterValue = 0;
-    static uint_32 ptr = 0;
+    ushort_16 clusterValue = 0;
+    uint_32 ptr = 0;
     clusterValue = f.directoryEntry->firstLogicalCluster;
     ptr = (uint_32)buffer; 
     char c, h, s;
@@ -120,34 +119,37 @@ void fread(FILE f, char* buffer)
         floppy_read(ptr, DEFAULT_FLOPPY, c, h, s, 512);
         ptr += 512;
         clusterValue = _getClusterValue(clusterValue);
+        
     } while(!isEOF(clusterValue));
 }
 
 void fwrite(FILE f, char* data, int length)
 {
-    ushort_16 currentCluster = f.directoryEntry->firstLogicalCluster;
     ushort_16 clusterValue = 0;
-    int writeLength = length;
+    uint_32 ptr = 0;
+    ptr = (uint_32)data;
+    clusterValue = f.directoryEntry->firstLogicalCluster;
+    uint_32 writeLength = length;
     if(writeLength > 512)
         writeLength = 512;
+    
     char c, h, s;
     for (ushort_16 i = 0; i < length; i+=512)
     {
-        int ptr = i + (int)data;
-        lba_2_chs(31+currentCluster, &c, &h, &s);
+        ptr += i;
+        lba_2_chs(31+clusterValue, &c, &h, &s);
         floppy_write(ptr, DEFAULT_FLOPPY, c, h, s, writeLength);
-        clusterValue = _getClusterValue(currentCluster);
+
+        clusterValue = _getClusterValue(clusterValue);
         if(isEOF(clusterValue))
         {
-            // TODO: Use _setClusterValue 
-            FAT_TABLE1[currentCluster] = _getNextEmptyCluster();
-        }
-        else
-        {
-            currentCluster = clusterValue;
+            _setClusterValue(clusterValue,_getNextEmptyCluster());
+            clusterValue = _getClusterValue(clusterValue);
         }
         
     }
+
+    _setClusterValue(clusterValue, 0xFF8);
     
     _writeFatTables();
     _writeRootDirectory();
@@ -273,7 +275,7 @@ ushort_16 _getClusterValue(ushort_16 cluster)
 
 ushort_16 _getNextEmptyCluster()
 {
-    for (ushort_16 i = 2; i < 2304; i++)
+    for (ushort_16 i = 3; i < 2304; i++)
     {
         if(_getClusterValue(i) == 0x00)
         {
@@ -284,34 +286,61 @@ ushort_16 _getNextEmptyCluster()
     return 0; 
 }
 
+void _setClusterValue(ushort_16 cluster, ushort_16 value)
+{
+    uchar_8 isOdd = cluster % 2;
+    ushort_16 count = cluster + (cluster/2);
+    ushort_16 val = 0;
+    val = FAT_TABLE1[count+1];
+    val = val << 8;
+    val |= FAT_TABLE1[count];
+    if(!isOdd)
+    {
+        val &= 0xF000;
+        val |= value;
+    }
+    else
+    {
+        val &= 0x000F;
+        val |= (value << 4);
+    }
+
+    ushort_16* temp = (ushort_16*)&FAT_TABLE1[count];
+    *temp = val;
+
+    _writeFatTables();
+}
+
 void _writeFatTables()
 {
+    kmalloc((char*)FATT_MEM_BUFFER, 4608);
+    *(char*) FATT_MEM_BUFFER = *FAT_TABLE1;
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
-    floppy_write(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
+    floppy_write(FATT_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
     lba_2_chs(10, &c, &h, &s);
-    floppy_write(FAT_TABLE1_MEMADDRESS, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 2
+    floppy_write(FATT_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 2
+    return;
 }
 
 void _writeRootDirectory()
 {
-    int rdPtr = 0xb000;
-    kmalloc((char*) rdPtr, 7680);
-    
     union
     {
-        char raw[7680];
+        char raw[7168];
         FAT_DirectoryEntry dic[224];
-    } ent;
-    
+    } temp;
+
+
+    kmalloc(temp.raw, 7168);
+
     // Only 34 files maximum
     for(int i = 0; i < 34; i++)
     {
-        ent.dic[i] = root_directory[i];
+        temp.dic[i] = root_directory[i];
     }
-
-    memory_copy(ent.raw, (char*)rdPtr, 7680);
+    
     char c, h, s;
     lba_2_chs(19, &c, &h, &s);
-    floppy_write(rdPtr, DEFAULT_FLOPPY, c, h, s, 7680);
+    floppy_write(&temp.raw, DEFAULT_FLOPPY, c, h, s, 7168);
 }

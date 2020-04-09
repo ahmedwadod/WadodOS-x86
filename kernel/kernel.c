@@ -18,16 +18,23 @@ void kmain()
     init_fat12(FLOPPY_DRIVE1);
     clear_screen();
 
-    // print_int(_BUFFADDR);
-    // return;
+    print("Reading from TEST.TXT...\n");
+    char *x;
+    FILE f = fopen("TEST.TXT", false);
+    fread(f, x);
+    print(x);
+    print("\nDone Reading!\n");
 
-    print("Reading file..\n");
-    FILE test = fopen("K4.BIN", false);
+    print("\nWriting to JEFF.TXT...");
+    char *jeff = "Hello, ma name is jeff!";
+    FILE jef = fopen("JEFF.TXT", true);
+    fwrite(jef, jeff, strlen(jeff));
+    print("\nDone Writing.\n");
 
-    char *x = (char*)500000;
-    kmalloc(x, 0x7000);
-    fread(test, x);
-    print("Done.");
-    
+    print("Reading JEFF.TXT...\n");
+    char *tmp;
+    fread(jef, tmp);
+    print(tmp);
+    print("\nDone!");
     return;
 }

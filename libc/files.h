@@ -31,8 +31,8 @@ typedef struct
     FAT_DirectoryEntry *directoryEntry;
 } FILE;
 
-#define FAT_TABLE1_MEMADDRESS 0xf1000
-#define FAT_TABLE2_MEMADDRESS 0xf2300
+#define FATT_MEM_BUFFER 0xf1000
+#define RD_MEM_BUFFER 0xf2300
 
 
 void init_fat12(char drive);
