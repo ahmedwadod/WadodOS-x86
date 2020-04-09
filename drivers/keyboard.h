@@ -8,7 +8,7 @@
 #include "../libc/stdlib.h"
 
 typedef void (*KB_OnKeyPress)(char);
-typedef void (*KB_OnEnterCallback)(char*);
+typedef void (*KB_OnEnterCallback)();
 typedef void (*KB_OnSpecialCharCallback)(char);
 typedef void (*KB_OnBackspaceCallback)();
 

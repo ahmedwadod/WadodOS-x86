@@ -8,8 +8,6 @@
 #define RIGHT_SHIFT_RELEASE 0xB6
 #define CAPSLOCK 0x3A
 
-char key_buffer[256] = "\0";
-
 #define SC_MAX 57
 const char *sc_name[] = { "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
     "7", "8", "9", "0", "-", "=", "Backspace", "Tab", "Q", "W", "E", 
@@ -47,14 +45,9 @@ static void keyboard_callback(registers_t regs) {
     };
 
     if (scancode == BACKSPACE) {
-        if(key_buffer[0] != '\0')
-        {
-            droplastchar(key_buffer);
-            backspace_callback(key_buffer);
-        }
+        backspace_callback();
     } else if (scancode == ENTER) {
-        enter_callback(key_buffer); 
-        key_buffer[0] = '\0';
+        enter_callback(); 
     } else if (scancode == LEFT_SHIFT || scancode == RIGHT_SHIFT)
     {
         isShift = true;
@@ -70,7 +63,6 @@ static void keyboard_callback(registers_t regs) {
         {
             letter = sc_ascii[(int)scancode];
         }
-        appendchar(key_buffer, letter);
         keypress_callback(letter);
     }
 }

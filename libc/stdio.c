@@ -45,22 +45,47 @@ void print_error(char* errormsg, int errorcode)
 
 /// Input Section ///
 static bool hang = false;
+static InputMode _inMode = 0;
+static char inputBuffer[1024];
+static char *outptr;
+
 void _keyPress(char letter)
 {
     if(hang)
     {
-        char str[2] = {letter, '\0'};
-        print(str);
+        if(_inMode == INPUT_MODE_ONE_CHAR)
+        {
+            outptr[0] = letter;
+            hang = false;
+        }
+        else
+        {
+            appendchar(inputBuffer, letter);
+            kprint_char(letter, -1, -1, CURRENT_STYLE);
+        }
     }
 }
-static char *outptr;
-void _enter(char* inputstr)
+void _enter()
 {
     if(hang)
     {
-        memory_copy(inputstr, outptr, strlen(inputstr));
-        hang =  0;
-        print("\n");
+        if(_inMode == INPUT_MODE_ONE_LINE)
+        {
+            memory_copy(inputBuffer, outptr, strlen(inputBuffer));
+            *inputBuffer = 0;
+            hang =  false;
+            print("\n");
+        }
+        else if( _inMode == INPUT_MODE_ONE_CHAR )
+        {
+            outptr[0] = '\n';
+            hang = false;
+        }
+        else
+        {
+            appendchar(inputBuffer, '\n');
+            print("\n");
+        }
     }
 }
 void _specialchar(char c)
@@ -70,12 +95,38 @@ void _specialchar(char c)
 void _backspace()
 {
     if(hang)
-        print_backspace();
+    {
+        if(inputBuffer[0] != 0)
+        {
+            droplastchar(inputBuffer);
+            print_backspace();
+        }
+    }
 }
 
 void input(char* instr)
 {
-    
+    _inMode = INPUT_MODE_ONE_LINE;   
+    hang = true;
+    while (hang)
+    {    }
+    memory_copy(outptr, instr, strlen(outptr));
+}
+
+char getChar(bool handled)
+{
+    _inMode = INPUT_MODE_ONE_CHAR;
+    hang = true;
+    while (hang)
+    {    }
+    if(!handled)
+        kprint_char(outptr[0], -1, -1, CURRENT_STYLE);
+    return outptr[0];
+}
+
+void inputMultiLine(char* instr)
+{
+    _inMode = INPUT_MODE_MULTILINE;
     hang = true;
     while (hang)
     {    }
