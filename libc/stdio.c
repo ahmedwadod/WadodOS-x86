@@ -3,24 +3,24 @@
 /* Clear screen */
 void clear_screen()
 {
-    kclear_screen_with_attr(CURRENT_STYLE);
+    kclear_screen_with_attr(*CURRENT_STYLE);
 }
 
 /* Set display style and clears the screen */
 void setup_display(enum DISPLAY_STYLES style)
 {
-    CURRENT_STYLE = style;
+    *CURRENT_STYLE = style;
     clear_screen();
 }
 
 void print(char* str)
 {
-    kprint_at_with_attr(str, -1, -1, CURRENT_STYLE);
+    kprint_at_with_attr(str, -1, -1, *CURRENT_STYLE);
 }
 
 void print_backspace()
 {
-    kprint_at_with_attr("\b \b", -1, -1, CURRENT_STYLE);
+    kprint_at_with_attr("\b \b", -1, -1, *CURRENT_STYLE);
 }
 
 // Print the value of a number in ascii
@@ -61,7 +61,7 @@ void _keyPress(char letter)
         else
         {
             appendchar(inputBuffer, letter);
-            kprint_char(letter, -1, -1, CURRENT_STYLE);
+            kprint_char(letter, -1, -1, *CURRENT_STYLE);
         }
     }
 }
@@ -120,7 +120,7 @@ char getChar(bool handled)
     while (hang)
     {    }
     if(!handled)
-        kprint_char(outptr[0], -1, -1, CURRENT_STYLE);
+        kprint_char(outptr[0], -1, -1, *CURRENT_STYLE);
     return outptr[0];
 }
 

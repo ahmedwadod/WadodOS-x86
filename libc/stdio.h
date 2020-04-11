@@ -21,7 +21,7 @@ typedef enum
     INPUT_MODE_MULTILINE = 2
 } InputMode;
 
-static int CURRENT_STYLE = 0x0F; // Default WHITE_FONT_BLACK_BG
+static int *CURRENT_STYLE = (int*)0xFFF;
 
 void clear_screen();
 void setup_display(enum DISPLAY_STYLES style);
