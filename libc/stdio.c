@@ -22,7 +22,7 @@ void puts(char *str)
 
 char* _convert(int value, int base)
 {
-    char *str;
+    char *str = 0;
     itoa(value, str, base);
     return str;
 }
