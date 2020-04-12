@@ -1,6 +1,6 @@
 ; ==================================================================
 ; WadodOS-x86 Bootloader
-; This bootloader loads KERNEL.BIN to physical memory address 0x1000
+; This bootloader loads KERNEL.BIN to physical memory address 0x2000
 ; Based on MikeOS bootloader
 ; ==================================================================
 [ORG 0x7c00]
@@ -169,7 +169,7 @@ read_fat_ok:
 
 	mov ax, 0			; Segment where we'll load kernel
 	mov es, ax
-	mov bx, 0x1000
+	mov bx, 0x2000
 
 	mov ah, 2			; int 13h floppy read params
 	mov al, 1
@@ -251,7 +251,7 @@ end:					; We've got the file to load!
 	pop ax				; Clean up the stack (AX was pushed earlier)
 	mov dl, byte [bootdev]		; Provide kernel with boot device info
 
-	call 0x0000:0x1000			; Jump to entry point of loaded kernel!
+	call 0x0000:0x2000			; Jump to entry point of loaded kernel!
 
 
 ; ------------------------------------------------------------------
@@ -332,7 +332,7 @@ l2hts:			; Calculate head, track and sector settings for int 13h
 
 	bootdev		db 0 	; Boot device number
 	cluster		dw 0 	; Cluster of the file we want to load
-	pointer		dw 0x1000	; Pointer into Buffer, for loading kernel
+	pointer		dw 0x2000	; Pointer into Buffer, for loading kernel
 
 
 ; ------------------------------------------------------------------

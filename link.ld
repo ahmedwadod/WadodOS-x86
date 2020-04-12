@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(binary)
 ENTRY(kstart)
-phys = 0x001000;
+phys = 0x002000;
 SECTIONS
 {
 	/*
@@ -28,7 +28,7 @@ SECTIONS
 	{
 		bss = .;
 		*(.bss)
-		. = ALIGN(4096);
+		. = ALIGN(16384);
 	}
 	/*
 	 * End of kernel.

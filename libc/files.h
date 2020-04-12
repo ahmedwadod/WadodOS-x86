@@ -31,7 +31,7 @@ typedef struct
     FAT_DirectoryEntry *directoryEntry;
 } FILE;
 
-#define FATT_MEM_BUFFER 0xf1000
+#define FATT_MEM_BUFFER 0xf2000
 #define RD_MEM_BUFFER 0xf2300
 
 
