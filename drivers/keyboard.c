@@ -1,4 +1,7 @@
-#include "keyboard.h"
+#include "../include/keyboard.h"
+#include "../include/stdbool.h"
+#include "../include/stdint.h"
+#include "../include/isr.h"
 
 #define BACKSPACE 0x0E
 #define ENTER 0x1C
@@ -9,19 +12,32 @@
 #define CAPSLOCK 0x3A
 
 #define SC_MAX 57
-const char *sc_name[] = { "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
-    "7", "8", "9", "0", "-", "=", "Backspace", "Tab", "Q", "W", "E", 
-        "R", "T", "Y", "U", "I", "O", "P", "[", "]", "Enter", "Lctrl", 
-        "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "`", 
-        "LShift", "\\", "Z", "X", "C", "V", "B", "N", "M", ",", ".", 
-        "/", "RShift", "Keypad *", "LAlt", "Spacebar"};
-const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+// const char *sc_name[] = { "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
+//     "7", "8", "9", "0", "-", "=", "Backspace", "Tab", "Q", "W", "E", 
+//         "R", "T", "Y", "U", "I", "O", "P", "[", "]", "Enter", "Lctrl", 
+//         "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "`", 
+//         "LShift", "\\", "Z", "X", "C", "V", "B", "N", "M", ",", ".", 
+//         "/", "RShift", "Keypad *", "LAlt", "Spacebar"};
+
+const char sc_ascii_lower[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
     '7', '8', '9', '0', '-', '=', '?', '?', 'q', 'w', 'e', 'r', 't', 'y', 
         'u', 'i', 'o', 'p', '[', ']', '?', '?', 'a', 's', 'd', 'f', 'g', 
         'h', 'j', 'k', 'l', ';', '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
         'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
 
-const char sc_ascii_shift[] = { '?', '?', '!', '@', '#', '$', '%', '^',     
+const char sc_ascii_upper[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+    '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
+        'U', 'I', 'O', 'P', '[', ']', '?', '?', 'A', 'S', 'D', 'F', 'G', 
+        'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
+        'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
+
+const char sc_ascii_shift_lower[] = { '?', '?', '!', '@', '#', '$', '%', '^',     
+    '&', '*', '(', ')', '_', '+', '?', '?', 'q', 'w', 'e', 'r', 't', 'y', 
+        'u', 'i', 'o', 'p', '[', ']', '?', '?', 'a', 's', 'd', 'f', 'g', 
+        'h', 'j', 'k', 'l', ':', '\"', '~', '?', '|', 'z', 'x', 'c', 'v', 
+        'b', 'n', 'm', '<', '>', '?', '?', '?', '?', ' '};
+
+const char sc_ascii_shift_upper[] = { '?', '?', '!', '@', '#', '$', '%', '^',     
     '&', '*', '(', ')', '_', '+', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
         'U', 'I', 'O', 'P', '[', ']', '?', '?', 'A', 'S', 'D', 'F', 'G', 
         'H', 'J', 'K', 'L', ':', '\"', '~', '?', '|', 'Z', 'X', 'C', 'V', 
@@ -34,6 +50,7 @@ static KB_OnSpecialCharCallback specialchar_callback;
 static KB_OnBackspaceCallback backspace_callback;
 
 static bool isShift = false;
+static bool isCapsLock = false;
 
 static void keyboard_callback(registers_t regs) {
     /* The PIC leaves us the scancode in port 0x60 */
@@ -55,13 +72,25 @@ static void keyboard_callback(registers_t regs) {
     {
         isShift = false;
     }
+    else if(scancode == CAPSLOCK)
+    {
+        isCapsLock = !isCapsLock;
+    }
     else {
         char letter; 
-        if(isShift)
-            letter = sc_ascii_shift[(int)scancode];
+        if(isShift && isCapsLock)
+        {
+            letter = sc_ascii_shift_lower[(int)scancode];
+        }else if(isShift && !isCapsLock)
+        {
+            letter = sc_ascii_shift_upper[(int)scancode];
+        }else if(!isShift && isCapsLock)
+        {
+            letter = sc_ascii_upper[(int)scancode];
+        }
         else
         {
-            letter = sc_ascii[(int)scancode];
+            letter = sc_ascii_lower[(int)scancode];
         }
         keypress_callback(letter);
     }

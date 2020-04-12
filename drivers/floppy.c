@@ -1,4 +1,7 @@
-#include "floppy.h"
+#include "../include/floppy.h"
+#include "../include/isr.h"
+#include "../include/stdlib.h"
+#include "../include/ports.h"
 
 void motor_turn_on(uchar_8 drive);
 void configure_drive();
@@ -27,9 +30,9 @@ void Floppy_Reset_IRQ_Handler(registers_t t)
 /** 
  * Configure the Floppy Disk Controller for the first time.
 */
-void setup_floppy()
+void init_floppy()
 {
-    memory_copy((uchar_8*)DISK_PARAMETER_ADDRESS, &floppy_disk, 11);
+    memcpy((uchar_8*)DISK_PARAMETER_ADDRESS, &floppy_disk, 11);
     register_interrupt_handler(IRQ6, Floppy_Reset_IRQ_Handler);
     return;
 }

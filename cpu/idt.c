@@ -1,4 +1,4 @@
-#include "idt.h"
+#include "../include/idt.h"
 
 void set_idt_gate(int n, uint_32 handler) {
     idt[n].low_offset = low_16(handler);

@@ -1,4 +1,5 @@
-#include "screen.h"
+#include "../include/screen.h"
+#include "../include/stdlib.h"
 
 /* Declaration of private functions */
 int get_cursor_offset();
@@ -30,7 +31,7 @@ void kprint_at(char* message, int col, int row) {
     }
 
     while (*temp != (char)0) {
-        offset = kprint_char(*temp, col, row, WHITE_ON_BLACK);
+        offset = kprint_char(*temp, col, row, CURRENT_DISPLAY_STYLE);
         /* Compute row/col for next iteration */
         row = get_offset_row(offset);
         col = get_offset_col(offset);
@@ -56,7 +57,7 @@ void kprint_at_with_attr(char* message, int col, int row, int attr)
     }
 
     if(attr == 0)
-        attr = WHITE_ON_BLACK;
+        attr = CURRENT_DISPLAY_STYLE;
 
     while (*temp != (char)0) {
         offset = kprint_char(*temp, col, row, attr);
@@ -85,7 +86,7 @@ void kclear_screen() {
     while (i < screen_size)
     {
         *screen++ = ' ';
-        *screen++ = WHITE_ON_BLACK;
+        *screen++ = CURRENT_DISPLAY_STYLE;
         i++;
     }
     
@@ -121,7 +122,7 @@ void kclear_screen_with_attr(int attr) {
  */
 int kprint_char(char c, int col, int row, int attr) {
     uchar_8* vidmem = VIDEO_ADDRESS;
-    if (!attr) attr = WHITE_ON_BLACK;
+    if (!attr) attr = CURRENT_DISPLAY_STYLE;
 
     /* Error control: print a red 'E' if the coords aren't right */
     if (col >= MAX_COLS || row >= MAX_ROWS) {
@@ -171,6 +172,15 @@ int kprint_char(char c, int col, int row, int attr) {
     return offset;
 }
 
+/**
+ * Setup the display style
+*/
+void kset_display(uchar_8 attr)
+{
+    CURRENT_DISPLAY_STYLE = attr;
+    kclear_screen_with_attr(CURRENT_DISPLAY_STYLE);
+}
+
 
 /**********************************************************
  * Private kernel functions                               *
@@ -203,7 +213,7 @@ int handle_scroll(int offset, char attr)
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         int i;
         for (i = 1; i < MAX_ROWS; i++) 
-            memory_copy(get_offset(0, i) + VIDEO_ADDRESS,
+            memcpy(get_offset(0, i) + VIDEO_ADDRESS,
                         get_offset(0, i-1) + VIDEO_ADDRESS,
                         MAX_COLS * 2);
 

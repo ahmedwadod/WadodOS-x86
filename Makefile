@@ -1,5 +1,5 @@
-C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c fs/*.c)
+HEADERS = $(wildcard include/*.h)
 # Nice syntax for file extension replacement
 OBJ = ${C_SOURCES:.c=.o} 
 OBJBIN = ${OBJ:%.o=bin/%.o}

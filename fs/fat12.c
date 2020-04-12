@@ -1,4 +1,7 @@
-#include "files.h"
+#include "../include/fat12.h"
+#include "../include/floppy.h"
+#include "../include/stdlib.h"
+#include "../include/string.h"
 
 void _convertFatNameToFileName(char fatName[8], char ext[3], char *filename);
 void _convertFileNameToFatName(char filename[12], char *fatName, char *ext);
@@ -13,19 +16,19 @@ static FAT_DirectoryEntry root_directory[224];
 static uchar_8 FAT_TABLE1[4608];
 static uchar_8 FAT_TABLE2[4608];
 
-void init_fat12(char drive)
+void init_fat12()
 {
-    DEFAULT_FLOPPY = drive;
-    setup_floppy();
-    reset_floppy_controller(drive);
+    DEFAULT_FLOPPY = FLOPPY_DRIVE1;
+    init_floppy();
+    reset_floppy_controller(FLOPPY_DRIVE1);
 
     /* Read tables */
     kmalloc((char*)FATT_MEM_BUFFER, 4608);
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
     floppy_read(FATT_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 4608);
-    memory_copy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE1, 4608);
-    memory_copy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE2, 4608);
+    memcpy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE1, 4608);
+    memcpy((uchar_8*)FATT_MEM_BUFFER, FAT_TABLE2, 4608);
 
     /* Read root directory */
     kmalloc((char*) RD_MEM_BUFFER, 7168);
@@ -36,7 +39,7 @@ void init_fat12(char drive)
         char raw[7168];
         FAT_DirectoryEntry dic[224];
     } ent;
-    memory_copy((char*)RD_MEM_BUFFER, ent.raw, 7168);
+    memcpy((char*)RD_MEM_BUFFER, ent.raw, 7168);
 
     // Only 34 files maximum
     for(int i = 0; i < 34; i++)
@@ -55,13 +58,13 @@ FILE fopen(char filename[12], bool create)
     _convertFileNameToFatName(filename, &fatName, &ext);
     for (int i = 0; i < 34; i++)
     {
-        char nc = strcmp_len(root_directory[i].name, fatName, 8);
-        char ec = strcmp_len(root_directory[i].extension, ext, 3);
-        if(nc && ec)
+        int nc = strncmp(root_directory[i].name, fatName, 8);
+        int ec = strncmp(root_directory[i].extension, ext, 3);
+        if(nc == 0 && ec == 0)
         {
-            memory_copy(fatName, f.name, 8);
-            memory_copy(ext, f.extension, 3);
-            memory_copy(filename, f.filename, 12);
+            memcpy(fatName, f.name, 8);
+            memcpy(ext, f.extension, 3);
+            memcpy(filename, f.filename, 12);
             f.directoryEntry = &root_directory[i];
             break;
         }
@@ -79,14 +82,14 @@ FILE fopen(char filename[12], bool create)
             
             _setClusterValue(emptyCluster, 0xFF8);
 
-            memory_copy(fatName, f.name, 8);
-            memory_copy(ext, f.extension, 3);
-            memory_copy(filename, f.filename, 12);
+            memcpy(fatName, f.name, 8);
+            memcpy(ext, f.extension, 3);
+            memcpy(filename, f.filename, 12);
 
             root_directory[emptySlotInRD].firstLogicalCluster = emptyCluster;
             root_directory[emptySlotInRD].longName[0] = 'A';
-            memory_copy(fatName, root_directory[emptySlotInRD].name, 8);
-            memory_copy(ext, root_directory[emptySlotInRD].extension, 3);
+            memcpy(fatName, root_directory[emptySlotInRD].name, 8);
+            memcpy(ext, root_directory[emptySlotInRD].extension, 3);
             f.directoryEntry = &root_directory[emptySlotInRD];
 
             _writeFatTables();
@@ -171,8 +174,8 @@ FILE* getAllFiles()
             break;
         }
         _convertFatNameToFileName(root_directory[i].name, root_directory[i].extension, f.filename);
-        memory_copy(root_directory[i].name, f.name, 8);
-        memory_copy(root_directory[i].extension, f.extension, 3);
+        memcpy(root_directory[i].name, f.name, 8);
+        memcpy(root_directory[i].extension, f.extension, 3);
         f.directoryEntry = &root_directory[i];
         files[i] = f;
         i++;
@@ -313,8 +316,8 @@ void _setClusterValue(ushort_16 cluster, ushort_16 value)
 
 void _writeFatTables()
 {
-    kmalloc((char*)FATT_MEM_BUFFER, 4608);
-    *(char*) FATT_MEM_BUFFER = *FAT_TABLE1;
+    memset(FATT_MEM_BUFFER, 0, 4608);
+    *FATT_MEM_BUFFER = *FAT_TABLE1;
     char c,h,s;
     lba_2_chs(1, &c, &h, &s);
     floppy_write(FATT_MEM_BUFFER, DEFAULT_FLOPPY, c, h, s, 4608); // TABLE 1
@@ -332,7 +335,7 @@ void _writeRootDirectory()
     } temp;
 
 
-    kmalloc(temp.raw, 7168);
+    memset(temp.raw, 0,7168);
 
     // Only 34 files maximum
     for(int i = 0; i < 34; i++)

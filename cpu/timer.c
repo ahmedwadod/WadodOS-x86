@@ -1,4 +1,5 @@
-#include "timer.h"
+#include "../include/timer.h"
+#include "../include/isr.h"
 
 /** 
  * Trigger a callback every time clock with requecny freq. freq in Hz.

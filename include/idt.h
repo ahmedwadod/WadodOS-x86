@@ -1,8 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include "types.h"
-#include "../libc/stdlib.h"
+#include "stdint.h"
 
 /* Segment selectors */
 #define KERNEL_CS 0x08
@@ -32,6 +31,8 @@ typedef struct {
 idt_gate_t idt[IDT_ENTRIES];
 idt_register_t idt_reg;
 
+#define low_16(address) (ushort_16)((address) & 0xFFFF)
+#define high_16(address) (ushort_16)(((address) >> 16) & 0xFFFF)
 
 /* Functions implemented in idt.c */
 void set_idt_gate(int n, uint_32 handler);

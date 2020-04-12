@@ -1,11 +1,8 @@
 #ifndef _FLOPPY_H
 #define _FLOPPY_H
 
-#include "../cpu/types.h"
-#include "../cpu/isr.h"
-#include "../cpu/ports.h"
-#include "../libc/stdlib.h"
-#include "../libc/stdio.h"
+#include "stdint.h"
+#include "stdbool.h"
 
 #define DISK_PARAMETER_ADDRESS 0x000fefc7
 #define FLOPPY_DRIVE1 0x0
@@ -70,7 +67,7 @@ typedef enum
 } DMA_mode;
 
 
-void setup_floppy();
+void init_floppy();
 void reset_floppy_controller(char drive);
 void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);
 void floppy_write(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);

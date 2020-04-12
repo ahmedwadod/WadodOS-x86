@@ -1,4 +1,6 @@
-#include "isr.h"
+#include "../include/isr.h"
+#include "../include/screen.h"
+#include "../include/stdlib.h"
 
 ISR interrupt_handlers[256];
 
@@ -154,7 +156,7 @@ void isr_handler(registers_t r) {
         return;
     kprint_at_with_attr("CPU Error: ", -1, -1, RED_ON_WHITE);
     char s[3];
-    int_to_ascii(r.int_no, s);
+    itoa(r.int_no, s, 10);
     kprint_at_with_attr(s, -1, -1, RED_ON_WHITE);
     kprint_at_with_attr(" :", -1, -1, RED_ON_WHITE);
     char* exp = exception_messages(r.int_no);

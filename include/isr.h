@@ -1,12 +1,8 @@
 #ifndef ISR_H
 #define ISR_H
 
-#include "types.h"
-#include "idt.h"
-#include "../drivers/screen.h"
-#include "../libc/stdlib.h"
-#include "../libc/strings.h"
-#include "ports.h"
+#include "stdint.h"
+#include "stdbool.h"
 
 /* ISRs reserved for CPU exceptions */
 extern void isr0();

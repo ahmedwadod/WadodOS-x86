@@ -28,12 +28,12 @@ SECTIONS
 	{
 		bss = .;
 		*(.bss)
-		. = ALIGN(16384);
+		. = ALIGN(4096);
 	}
 	/*
 	 * End of kernel.
 	 */
-	end = .;
+	kernel_end = .;
 	/*
 	 * Get rid of unnecessary GCC bits.
 	 */

@@ -1,10 +1,8 @@
-#ifndef _FILES_H
-#define _FILES_H
+#ifndef _FAT12_H
+#define _FAT12_H
 
-#include "../cpu/types.h"
-#include "../drivers/floppy.h"
-#include "../libc/strings.h"
-
+#include "stdint.h"
+#include "stdbool.h"
 
 typedef struct {
     char longName[16];
@@ -31,11 +29,11 @@ typedef struct
     FAT_DirectoryEntry *directoryEntry;
 } FILE;
 
-#define FATT_MEM_BUFFER 0xf2000
-#define RD_MEM_BUFFER 0xf2300
+static char* FATT_MEM_BUFFER = 0;
+static char* RD_MEM_BUFFER = 0;
 
 
-void init_fat12(char drive);
+void init_fat12();
 FILE fopen(char filename[12], bool create);
 void fread(FILE f, char* buffer);
 void fwrite(FILE f, char* data, int length);
