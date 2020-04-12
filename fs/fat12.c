@@ -111,11 +111,11 @@ bool isEOF(ushort_16 clusval)
 }
 void fread(FILE f, char* buffer)
 {
-    ushort_16 clusterValue = 0;
-    uint_32 ptr = 0;
+    static ushort_16 clusterValue = 0;
+    static uint_32 ptr = 0;
     clusterValue = f.directoryEntry->firstLogicalCluster;
     ptr = (uint_32)buffer; 
-    char c, h, s;
+    static char c, h, s;
     do
     {
         lba_2_chs(31+clusterValue, &c, &h, &s);
