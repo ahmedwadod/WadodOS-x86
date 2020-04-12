@@ -21,10 +21,11 @@ It constructs of the following components:
     - Kernel: The OS itself
     - Drivers: All the basic drivers for the OS
     - CPU: All files needed to deal with the CPU stuff (IDT, ISR)
+    - fs: The file systems the OS can deal with
     - libc: My C librarys (stdio, stdlib, etc...)
 
 ## Roadmap
-The work on this project isn't done and here is the roadmao and milestones:
+The work on this project isn't done and here is the roadmap and milestones:
 
 [ ✓ ] Switch to Protected Mode and load kernel from disk
 
@@ -40,11 +41,29 @@ The work on this project isn't done and here is the roadmao and milestones:
 
 [ ✓ ] Add floppy disk driver
 
-[ ✓ ] Add files.h library
+[ ✓ ] Add FAT12 file system
 
-[ X ] Add syscalls
+[ ✓ ] Add C librarys
 
-[ X ] Load shell from disk and execute it
+[ X ] Add memory managment
+
+[ X ] Add exFAT, FAT16 and FAT32 support
+
+[ X ] Add file system managment
+
+[ X ] Add hard disk driver
+
+[ X ] Autodiscover devices
+
+[ X ] Configure the OS to work from either floppy or hard disk
+
+[ X ] Add graphics mode
+
+[ X ] Add standard librarys for graphics
+
+[ X ] Enable Multitasking
+
+[ X ] Add ELF Loader
 
 ## Usage
 #### Build from source code:
