@@ -1,6 +1,7 @@
 #include "../include/screen.h"
 #include "../include/stdio.h"
 #include "../include/stdlib.h"
+#include "../include/stdtime.h"
 #include "../include/fat12.h"
 #include "../include/string.h"
 
@@ -11,6 +12,10 @@ extern void kmain()
     kprint("Checking floppy...");
     init_fat12();
     kset_display(31);
+
+    printf("Start time: ");
+    print_datetime(datetime_now());
+    printf("\n\n");
 
     /* Reading file */
     printf("Reading from disk...\n");

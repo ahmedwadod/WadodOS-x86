@@ -45,8 +45,6 @@ The work on this project isn't done and here is the roadmap and milestones:
 
 [ ✓ ] Add C librarys
 
-[ X ] Add memory managment
-
 [ X ] Add exFAT, FAT16 and FAT32 support
 
 [ X ] Add file system managment
