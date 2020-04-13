@@ -29,8 +29,8 @@ char* _convert(int value, int base)
 void printf(char * format, ...)
 {
     char *traverse = format; 
-	unsigned int i; 
-	char *s; 
+	uint_32 i = 0; 
+	char *s = ""; 
 	
 	//Module 1: Initializing Myprintf's arguments 
 	va_list arg; 
@@ -65,7 +65,7 @@ void printf(char * format, ...)
 						puts(_convert(i,10));
 						break; 
 						
-			case 'o': i = va_arg(arg,unsigned int); //Fetch Octal representation
+			case 'o': i = va_arg(arg,uint_32); //Fetch Octal representation
 						puts(_convert(i,8));
 						break; 
 						
@@ -73,9 +73,12 @@ void printf(char * format, ...)
 						puts(s); 
 						break; 
 						
-			case 'x': i = va_arg(arg,unsigned int); //Fetch Hexadecimal representation
+			case 'x': i = va_arg(arg,uint_32); //Fetch Hexadecimal representation
 						puts(_convert(i,16));
 						break; 
+            case 'b': i = va_arg(arg,uint_32);
+                        puts(_convert(i, 2));
+                        break;
 		}	
 	} 
 	
