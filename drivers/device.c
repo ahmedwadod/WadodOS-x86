@@ -1,9 +1,10 @@
 #include "../include/device.h"
-
+#include "../include/floppy.h"
 
 void init_devices()
 {
     kmalloc(sys_devices, 32 * sizeof(device_t));
+    init_floppy(FLOPPY_DRIVE1);
 }
 
 void add_sys_device(device_t dev)

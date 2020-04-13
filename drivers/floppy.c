@@ -1,6 +1,7 @@
 #include "../include/floppy.h"
 #include "../include/isr.h"
 #include "../include/stdlib.h"
+#include "../include/string.h"
 #include "../include/ports.h"
 #include "../include/device.h"
 
@@ -16,6 +17,7 @@ void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc
 void init_dma(uchar_8 mode, uint_32 addr, uint_32 bytescount);
 
 void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_data* d_data);
+void floppy_std_write(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data);
 
 /* Start */
 
@@ -44,10 +46,15 @@ void init_floppy(char drive)
     fdata.motor_status = 0;
     fdata.c = fdata.h = fdata.s = fdata.ss = fdata.st0 = fdata.st1 = fdata.st2 = 0;
     device_t floppy;
-    floppy.ID = 2;
+    floppy.ID = 2 + drive;
+    char *name = "FD";
+    char *no;
+    itoa(drive, no, 10);
+    strcat(name, no);
+    strcpy(floppy.name, name);
     memcpy(&fdata, &floppy.data, sizeof(floppy_d_data));
     floppy.d_read = floppy_std_read;
-    // TODO: Add d_read d_write
+    floppy.d_write = floppy_std_write;
 
     reset_floppy_controller(&floppy.data);
 
@@ -414,4 +421,11 @@ void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_da
     char c, h, s;
     lba_2_chs(lba, &c, &h, &s);
     floppy_read((int)buffer, d_data->drive, c, h, s, sectorCount*512, d_data);
+}
+
+void floppy_std_write(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data)
+{
+    char c, h, s;
+    lba_2_chs(lba, &c, &h, &s);
+    floppy_write((int)buffer, d_data->drive, c, h, s, byteCount, d_data);
 }
