@@ -2,23 +2,25 @@
 #include "../include/isr.h"
 #include "../include/stdlib.h"
 #include "../include/ports.h"
+#include "../include/device.h"
 
-void motor_turn_on(uchar_8 drive);
-void configure_drive();
-void calibrate_drive(uchar_8 drive);
+void motor_turn_on(floppy_d_data* f_data);
+void configure_drive(floppy_parameters params);
+void calibrate_drive(floppy_d_data* f_data);
 void check_interupt_status(uchar_8* st0, uchar_8* cy);
 void wait_until_floppy_ready();
 void write_floppy_command(uchar_8 command);
 uchar_8 read_floppy_data();
-void floppy_seek(uchar_8 drive, uchar_8 hd, uchar_8 cy);
+void floppy_seek(floppy_d_data* f_data, uchar_8 hd, uchar_8 cy);
 void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc, uchar_8* oh, uchar_8* osn, uchar_8* oss);
 void init_dma(uchar_8 mode, uint_32 addr, uint_32 bytescount);
 
+void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_data* d_data);
+
 /* Start */
 
-floppy_parameters floppy_disk;
-static uchar_8 st0, st1, st2, c, h, s, ss;
-uchar_8 floppy_motor_status = 0;
+
+
 static bool FloppyIRQ_Recieved = false;
 
 
@@ -30,10 +32,26 @@ void Floppy_Reset_IRQ_Handler(registers_t t)
 /** 
  * Configure the Floppy Disk Controller for the first time.
 */
-void init_floppy()
+void init_floppy(char drive)
 {
-    memcpy((uchar_8*)DISK_PARAMETER_ADDRESS, &floppy_disk, 11);
+    floppy_parameters paras;
+    memcpy((uchar_8*)DISK_PARAMETER_ADDRESS, &paras, 11);
     register_interrupt_handler(IRQ6, Floppy_Reset_IRQ_Handler);
+
+    floppy_d_data fdata;
+    fdata.drive = drive;
+    fdata.params = paras;
+    fdata.motor_status = 0;
+    fdata.c = fdata.h = fdata.s = fdata.ss = fdata.st0 = fdata.st1 = fdata.st2 = 0;
+    device_t floppy;
+    floppy.ID = 2;
+    memcpy(&fdata, &floppy.data, sizeof(floppy_d_data));
+    floppy.d_read = floppy_std_read;
+    // TODO: Add d_read d_write
+
+    reset_floppy_controller(&floppy.data);
+
+    add_sys_device(floppy);
     return;
 }
 
@@ -42,72 +60,72 @@ void init_floppy()
  * 
  * drive: Floppy drive number (FLOPPY_DRIVE1 or FLOPPY_DRIVE2)
 */
-void reset_floppy_controller(char drive)
+void reset_floppy_controller(floppy_d_data* f_data)
 {
     FloppyIRQ_Recieved = false;
 
     // Enter and exit the reset
     port_byte_out(DIGITAL_OUTPUT_REGISTER, 0x00);
-    port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b1100 | drive);
+    port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b1100 | f_data->drive);
 
     while (!FloppyIRQ_Recieved);
-
-    check_interupt_status(&st0, &c);    
+    
+    check_interupt_status(&f_data->st0, &f_data->c);    
 
     port_byte_out(CONFIGURATION_CONTROL_REGISTER, 0x0); // Set at 500kbps
-    
-    configure_drive();
-    calibrate_drive(drive);
+   
+    configure_drive(f_data->params);
+    calibrate_drive(f_data);
     
     return;
 }
 
-void configure_drive()
+void configure_drive(floppy_parameters params)
 {
     write_floppy_command(SPECIFY);
-    write_floppy_command(floppy_disk.steprate_headunload);
-    write_floppy_command(floppy_disk.headload_ndma);
+    write_floppy_command(params.steprate_headunload);
+    write_floppy_command(params.headload_ndma);
     return;
 }
 
-void calibrate_drive(uchar_8 drive)
+void calibrate_drive(floppy_d_data* f_data)
 {
     FloppyIRQ_Recieved = false; // Must be at top
 
-    motor_turn_on(drive);
+    motor_turn_on(f_data);
     write_floppy_command(RECALIBRATE);
-    write_floppy_command(drive);
+    write_floppy_command(f_data->drive);
 
     while (!FloppyIRQ_Recieved);
 
-    check_interupt_status(&st0, &c);
+    check_interupt_status(&f_data->st0, &f_data->c);
 
-    if(st0 & 0xc0)
+    if(f_data->st0 & 0xc0)
     {
-        kpanic("Floppy Calibrate Error", st0);
+        kpanic("Floppy Calibrate Error", f_data->st0);
     }
-    if(c == 0)
+    if(f_data->c == 0)
     {
         return;
     }
     else
     {
-        calibrate_drive(drive);
+        calibrate_drive(f_data);
     }   
 
 }
 
-void motor_turn_on(uchar_8 drive)
+void motor_turn_on(floppy_d_data* f_data)
 {
-    if(floppy_motor_status == 1)
+    if(f_data->motor_status == 1)
         return;
-    int sleeptime = (int)floppy_disk.motor_start_time * 125;
-    if(drive == FLOPPY_DRIVE1)
-        port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b00011100 | drive);
-    if(drive == FLOPPY_DRIVE2)
-        port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b00101100 | drive);
+    int sleeptime = (int)f_data->params.motor_start_time * 125;
+    if(f_data->drive == FLOPPY_DRIVE1)
+        port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b00011100 | f_data->drive);
+    if(f_data->drive == FLOPPY_DRIVE2)
+        port_byte_out(DIGITAL_OUTPUT_REGISTER, 0b00101100 | f_data->drive);
     sleep(sleeptime);
-    floppy_motor_status = 1;
+    f_data->motor_status = 1;
 }
 
 void check_interupt_status(uchar_8* st0, uchar_8* cy)
@@ -143,29 +161,27 @@ uchar_8 read_floppy_data()
     return port_byte_in(DATA_FIFO);
 }
 
-void floppy_seek(uchar_8 drive, uchar_8 hd, uchar_8 cy)
+void floppy_seek(floppy_d_data* f_data, uchar_8 hd, uchar_8 cy)
 {
     FloppyIRQ_Recieved = false;
-    motor_turn_on(drive);
+    motor_turn_on(f_data);
 
     write_floppy_command(SEEK);
-    write_floppy_command((hd << 2) | drive);
+    write_floppy_command((hd << 2) | f_data->drive);
     write_floppy_command(cy);
 
     while (!FloppyIRQ_Recieved);
 
-    check_interupt_status(&st0, &c);
+    check_interupt_status(&f_data->st0, &f_data->c);
     
-    if(((st0>>5) & 0x01) && cy == c)
+    if(((f_data->st0>>5) & 0x01) && cy == f_data->c)
     {
         return;
     }
     else
     {
-        kpanic("Floppy Seek Error.", st0);
+        kpanic("Floppy Seek Error.", f_data->st0);
     }
-    
-    
 }
 
 /**
@@ -198,30 +214,30 @@ void lba_2_chs(int lba, uchar_8* cy, uchar_8* hd, uchar_8* sc)
  * sc: Starting sector
  * size: The length of data to load from floppy to memory in bytes
 */
-void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size)
+void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size, floppy_d_data* f_data)
 {
     FloppyIRQ_Recieved = false;
 
-    floppy_seek(drive, 0, cy);
-    floppy_seek(drive, 1, cy);
+    floppy_seek(f_data, 0, cy);
+    floppy_seek(f_data, 1, cy);
 
-    motor_turn_on(drive);
+    motor_turn_on(f_data);
     init_dma(DMA_READ, memaddr, size);
-    sleep(floppy_disk.head_settle_time);
+    sleep(f_data->params.head_settle_time);
 
     write_floppy_command(READ_DATA | 0x40 | 0x80);
     write_floppy_command((hd << 2)|drive);
     write_floppy_command(cy);
     write_floppy_command(hd);
     write_floppy_command(sc);
-    write_floppy_command(floppy_disk.bytes_per_sector);
-    write_floppy_command(floppy_disk.sectors_per_track);
-    write_floppy_command(floppy_disk.gap_length);
-    write_floppy_command(floppy_disk.data_length);
+    write_floppy_command(f_data->params.bytes_per_sector);
+    write_floppy_command(f_data->params.sectors_per_track);
+    write_floppy_command(f_data->params.gap_length);
+    write_floppy_command(f_data->params.data_length);
 
     while(!FloppyIRQ_Recieved){}
 
-    floppy_read_result(&st0, &st1, &st2, &c, &h, &s, &ss);
+    floppy_read_result(&f_data->st0, &f_data->st1, &f_data->st2, &f_data->c, &f_data->h, &f_data->s, &f_data->ss);
 
     return;
     
@@ -238,30 +254,30 @@ void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc,
  * sc: Starting sector
  * size: Length of data to write in bytes
 */
-void floppy_write(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size)
+void floppy_write(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size, floppy_d_data* f_data)
 {
     FloppyIRQ_Recieved = false;
 
-    floppy_seek(drive, 0, cy);
-    floppy_seek(drive, 1, cy);
+    floppy_seek(f_data, 0, cy);
+    floppy_seek(f_data, 1, cy);
 
-    motor_turn_on(drive);
+    motor_turn_on(f_data);
     init_dma(DMA_WRITE, memaddr, size);
-    sleep(floppy_disk.head_settle_time);
+    sleep(f_data->params.head_settle_time);
 
     write_floppy_command(WRITE_DATA | 0x40);
     write_floppy_command((hd << 2)|drive);
     write_floppy_command(cy);
     write_floppy_command(hd);
     write_floppy_command(sc);
-    write_floppy_command(floppy_disk.bytes_per_sector);
-    write_floppy_command(floppy_disk.sectors_per_track);
-    write_floppy_command(floppy_disk.gap_length);
-    write_floppy_command(floppy_disk.data_length);
+    write_floppy_command(f_data->params.bytes_per_sector);
+    write_floppy_command(f_data->params.sectors_per_track);
+    write_floppy_command(f_data->params.gap_length);
+    write_floppy_command(f_data->params.data_length);
 
     while(!FloppyIRQ_Recieved){}
 
-    floppy_read_result(&st0, &st1, &st2, &c, &h, &s, &ss);
+    floppy_read_result(&f_data->st0, &f_data->st1, &f_data->st2, &f_data->c, &f_data->h, &f_data->s, &f_data->ss);
 
     return;
 }
@@ -323,62 +339,62 @@ void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc
 
     int error = 0;
 
-    if(st0 & 0xC0) {
+    if(*ost0 & 0xC0) {
         static const uchar_8 * status[] =
         { 0, "error", "invalid command", "drive not ready" };
-        kpanic("Floppy Error: General error in st0.", st0);
+        kpanic("Floppy Error: General error in st0.", *ost0);
         error = 1;
     }
-    if(st1 & 0x80) {
-        kpanic("Floppy Error: end of cylinder.", st0);
+    if(*ost1 & 0x80) {
+        kpanic("Floppy Error: end of cylinder.", *ost0);
         error = 1;
     }
-    if(st0 & 0x08) {
-        kpanic("Floppy Error: drive not ready.", st0);
+    if(*ost0 & 0x08) {
+        kpanic("Floppy Error: drive not ready.", *ost0);
         error = 1;
     }
-    if(st1 & 0x20) {
-        kpanic("Floppy Error: CRC error.", st1);
+    if(*ost1 & 0x20) {
+        kpanic("Floppy Error: CRC error.", *ost1);
         error = 1;
     }
-    if(st1 & 0x10) {
-        kpanic("Floppy Error: controller timeout.", st1);
+    if(*ost1 & 0x10) {
+        kpanic("Floppy Error: controller timeout.", *ost1);
         error = 1;
     }
-    if(st1 & 0x04) {
-        kpanic("Floppy Error: no data found.", st1);
+    if(*ost1 & 0x04) {
+        kpanic("Floppy Error: no data found.", *ost1);
         error = 1;
     }
-    if((st1|st2) & 0x01) {
-        kpanic("Floppy Error: no address mark found.", st1);
+    if((*ost1|*ost2) & 0x01) {
+        kpanic("Floppy Error: no address mark found.", *ost1);
         error = 1;
     }
-    if(st2 & 0x40) {
-        kpanic("Floppy Error: deleted address mark.", st2);
+    if(*ost2 & 0x40) {
+        kpanic("Floppy Error: deleted address mark.", *ost2);
         error = 1;
     }
-    if(st2 & 0x20) {
-        kpanic("Floppy Error: CRC error in data.", st2);
+    if(*ost2 & 0x20) {
+        kpanic("Floppy Error: CRC error in data.", *ost2);
         error = 1;
     }
-    if(st2 & 0x10) {
-        kpanic("Floppy Error: wrong cylinder.", st2);
+    if(*ost2 & 0x10) {
+        kpanic("Floppy Error: wrong cylinder.", *ost2);
         error = 1;
     }
-    if(st2 & 0x04) {
-        kpanic("Floppy Error: uPD765 sector not found.", st2);
+    if(*ost2 & 0x04) {
+        kpanic("Floppy Error: uPD765 sector not found.", *ost2);
         error = 1;
     }
-    if(st2 & 0x02) {
-        kpanic("Floppy Error: bad cylinder.", st2);
+    if(*ost2 & 0x02) {
+        kpanic("Floppy Error: bad cylinder.", *ost2);
         error = 1;
     }
-    if(ss != 0x2) {
-        kpanic("Floppy Error: cannot read bytes.", ss);
+    if(*oss != 0x2) {
+        kpanic("Floppy Error: cannot read bytes.", *oss);
         error = 1;
     }
-    if(st1 & 0x02) {
-        kpanic("Floppy Error: not writable.",  st1);
+    if(*ost1 & 0x02) {
+        kpanic("Floppy Error: not writable.",  *ost1);
         error = 2;
     }
 
@@ -391,4 +407,11 @@ void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc
     }
     
     return;
+}
+
+void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_data* d_data)
+{
+    char c, h, s;
+    lba_2_chs(lba, &c, &h, &s);
+    floppy_read((int)buffer, d_data->drive, c, h, s, sectorCount*512, d_data);
 }

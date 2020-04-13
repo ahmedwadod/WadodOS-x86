@@ -66,11 +66,20 @@ typedef enum
     DMA_READ =  0b01010100
 } DMA_mode;
 
+typedef struct 
+{
+  char drive;
+  floppy_parameters params;
+  uchar_8 st0, st1, st2, c, h, s, ss;
+  uchar_8 motor_status;
 
-void init_floppy();
-void reset_floppy_controller(char drive);
-void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);
-void floppy_write(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);
-void lba_2_chs(int lba, uchar_8* cy, uchar_8* hd, uchar_8* sc);
+} floppy_d_data;
+
+
+void init_floppy(char drive);
+// void reset_floppy_controller(char drive);
+// void floppy_read(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);
+// void floppy_write(int memaddr, uchar_8 drive, uchar_8 cy, uchar_8 hd, uchar_8 sc, int size);
+// void lba_2_chs(int lba, uchar_8* cy, uchar_8* hd, uchar_8* sc);
 
 #endif
