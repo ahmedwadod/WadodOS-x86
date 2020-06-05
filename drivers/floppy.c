@@ -16,7 +16,7 @@ void floppy_seek(floppy_d_data* f_data, uchar_8 hd, uchar_8 cy);
 void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc, uchar_8* oh, uchar_8* osn, uchar_8* oss);
 void init_dma(uchar_8 mode, uint_32 addr, uint_32 bytescount);
 
-void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_data* d_data);
+void floppy_std_read(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data);
 void floppy_std_write(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data);
 
 /* Start */
@@ -416,11 +416,11 @@ void floppy_read_result(uchar_8* ost0, uchar_8* ost1, uchar_8* ost2, uchar_8* oc
     return;
 }
 
-void floppy_std_read(char* buffer, uint_32 lba, uint_32 sectorCount, floppy_d_data* d_data)
+void floppy_std_read(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data)
 {
     char c, h, s;
     lba_2_chs(lba, &c, &h, &s);
-    floppy_read((int)buffer, d_data->drive, c, h, s, sectorCount*512, d_data);
+    floppy_read((int)buffer, d_data->drive, c, h, s, byteCount, d_data);
 }
 
 void floppy_std_write(char* buffer, uint_32 lba, uint_32 byteCount, floppy_d_data* d_data)

@@ -13,7 +13,7 @@ typedef struct
 {
     uint_32 ID;
     char name[4];
-    void (*d_read) (char* buffer, uint_32 lba, uint_32 sectorCount, d_data_t* d_data);
+    void (*d_read) (char* buffer, uint_32 lba, uint_32 byteCount, d_data_t* d_data);
     void (*d_write)(char* buffer, uint_32 lba, uint_32 byteCount, d_data_t* d_data);
     d_data_t data; 
 } device_t;

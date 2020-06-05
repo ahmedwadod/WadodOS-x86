@@ -1,8 +1,34 @@
 #include "../include/fs.h"
 
-void init_fs(device_t* dev)
+void init_fs()
 {
+    kmalloc(filesystems, 32 * sizeof(filesystem_t));
+    device_t *di;
+    
+    for (int i = 2; i < 32; i++)
+    {
+        di = get_sys_device(i);
+        if(di != NULL)
+        {
+            BOOTSECTOR *bs;
+            kmalloc(bs, sizeof(BOOTSECTOR));
+            di->d_read(bs, 0, sizeof(BOOTSECTOR), &di->data);
+            if(bs->total_sectors_16 == 0)
+            {
+                // Todo: init fat32
+            }
+            else if(bs->total_sectors_16 < 4085)
+            {
+                // Todo: init fat12
 
+            }
+            else
+            {
+                // TODO: init fat16
+            }
+        }
+    }
+    
 }
 
 void datetime_to_fatdatetime(datetime_t* dt, ushort_16* fattime, ushort_16* fatdate)
@@ -31,7 +57,7 @@ void datetime_to_fatdatetime(datetime_t* dt, ushort_16* fattime, ushort_16* fatd
     *fatdate = (year << 9) | (month << 5) | day;
 }
 
-void fatdatetime_todatetime(ushort_16* fattime, ushort_16* fatdate, datetime_t* dt)
+void fatdatetime_to_datetime(ushort_16* fattime, ushort_16* fatdate, datetime_t* dt)
 {
     ushort_16 hour, minute, second;
     hour = (*fattime  >> 11);

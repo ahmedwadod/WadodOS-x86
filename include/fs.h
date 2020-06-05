@@ -43,27 +43,45 @@ typedef char* fs_data_t;
 typedef struct
 {
     FS_TYPE type;
-    device_t* dev;
-    FILE (*f_open)(char* filename);
-    FILE* (*f_list)();
-    bool (*f_exist)(char* filename);
-    void (*f_touch)(char* filename);
-    void (*f_read)(FILE f, char* buffer);
-    void (*f_write)(FILE f, char* buffer, int count);
-    void (*f_delete)(char* filename);
+    device_t* device;
+    FILE (*f_open)(char* filename, device_t* dev, fs_data_t* data);
+    FILE* (*f_list)(device_t* dev, fs_data_t* data);
+    bool (*f_exist)(char* filename, device_t* dev, fs_data_t* data);
+    void (*f_touch)(char* filename, device_t* dev, fs_data_t* data);
+    void (*f_read)(FILE f, char* buffer, device_t* dev, fs_data_t* data);
+    void (*f_write)(FILE f, char* buffer, int count, device_t* dev, fs_data_t* data);
+    void (*f_delete)(char* filename, device_t* dev, fs_data_t* data);
     fs_data_t data;
 } filesystem_t;
+
+typedef struct
+{
+    uchar_8 		bootjmp[3];
+	uchar_8 		oem_name[8];
+	ushort_16 	    bytes_per_sector;
+	uchar_8		    sectors_per_cluster;
+	ushort_16		reserved_sector_count;
+	uchar_8		    table_count;
+	ushort_16		root_entry_count;
+	ushort_16		total_sectors_16;
+	uchar_8		    media_type;
+	ushort_16		table_size_16;
+	ushort_16		sectors_per_track;
+	ushort_16		head_side_count;
+	uint_32 		hidden_sector_count;
+	uint_32 		total_sectors_32;
+}BOOTSECTOR;
 
 static filesystem_t* filesystems = 0;
 static int lastFS = 0;
 static filesystem_t* current_fs = 0;
 
-void init_fs(device_t* dev);
+void init_fs();
 void select_drive(char* drive);
 
 void datetime_to_fatdatetime(datetime_t* dt, ushort_16* fattime, ushort_16* fatdate);
-void fatdatetime_todatetime(ushort_16* fattime, ushort_16* fatdate, datetime_t* dt);
+void fatdatetime_to_datetime(ushort_16* fattime, ushort_16* fatdate, datetime_t* dt);
 
-#define fopen(filename) current_fs->f_open(filename)
+#define fopen(filename) current_fs->f_open(filename, current_fs->device, current_fs->data)
 
 #endif
